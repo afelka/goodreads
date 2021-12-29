@@ -2,16 +2,12 @@ library(ggimage)
 library(dplyr)
 library(rvest)
 library(stringr)
-library(writexl)
-library(readxl)
 library(RSelenium)
-library(qdapRegex)
 library(purrr)
 library(lubridate)
 library(DT)
 library(ggplot2)
 library(renv)
-library(ggimage)
 
 ### Goodreads read shelf , change to yours if you want to try the code ###
 
