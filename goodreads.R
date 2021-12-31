@@ -67,7 +67,7 @@ no_of_pages <-  unlist(lapply(webElems0, function(x) {x$getElementAttribute("hre
 
 
 ## Create empty dataframe with needed columns
-goodreads_list <- tibble(book_names = character(), 
+goodreads_list <- data.frame(book_names = character(), 
                              author_pages = character(),
                              no_of_pages = character(),
                              avg_rating = character(),
@@ -126,7 +126,7 @@ goodreads_list <<- rbind(goodreads_list,temp_list)
 
 }
 
-## Download book covers (downloads covers to your computer, skip this if you don't want that)
+## Download book covers (downloads covers to your computer, used later in plots)
 
 for (i in 1:nrow(goodreads_list)) {
   
