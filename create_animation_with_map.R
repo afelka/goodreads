@@ -38,9 +38,11 @@ plain <- theme(
 
 #for each book create a ggplot map by highlighting the country the author is originated
 #also put the image of book cover in the middle of atlantic ocean
+#also put the logo of the aarhus book club bottom left corner
 for (i in 1:nrow(goodreads_list)) {
   
-  selected_row <- goodreads_list %>% slice(i) %>% mutate(count = 1)
+  #add abc.jpg which is the aarhus book club's logo
+  selected_row <- goodreads_list %>% slice(i) %>% mutate(count = 1, img_abc = "./abc.jpg")
               
   world_joined_with_one_book <- left_join(world, selected_row, by = c("region" = "country")) 
   
@@ -48,6 +50,7 @@ for (i in 1:nrow(goodreads_list)) {
     coord_fixed(1.3) +
     geom_polygon(aes(fill = count)) +
     geom_image(data = selected_row , aes(x = -30, y = 40 , group = 0, image=img_path), size=.09, position = "identity") +
+    geom_image(data = selected_row , aes(x = -130, y = -55 , group = 0, image=img_abc), size=.2, position = "identity") +
     ggtitle(paste0(selected_row$book_names," (", selected_row$no_of_pages, " pages)", " by ", selected_row$name, " (", selected_row$country, ")") ) +
     theme(legend.position = "none") +
     labs(subtitle = paste0("Book ", selected_row$row_number, "/", max(goodreads_list$row_number) )) + 

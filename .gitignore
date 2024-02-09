@@ -4,4 +4,5 @@
 .Ruserdata
 *.png
 *.jpg
+!abc.jpg
 *.gif
