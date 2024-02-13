@@ -83,4 +83,21 @@ img_animated <- image_animate(img_joined, fps = 1)
 image_write(image = img_animated,
             path = "aarhus_book_club.gif")
 
+#map with number of books per country
 
+no_of_books_per_country <- goodreads_list %>% group_by(country) %>% summarise(no_of_books = n())
+
+world_joined_all_countries <- left_join(world, no_of_books_per_country, by = c("region" = "country")) %>%
+                              arrange(no_of_books)
+
+unique_colors <- c("cyan", "blue", "green", "red", "purple", "orange", "pink")  
+
+books_per_country <- ggplot(data = world_joined_all_countries, mapping = aes(x = long, y = lat, group = group)) + 
+  coord_fixed(1.3) +
+  geom_polygon(aes(fill = as.factor(no_of_books))) +
+  scale_fill_manual(name = "# of Books", values = unique_colors, breaks = unique(na.omit(world_joined_all_countries$no_of_books))) +
+  ggtitle("Books Read per Country") +
+  theme(plot.title = element_text(size = 8, face = "bold")) +
+  plain
+
+ggsave("books_per_country.png", plot = books_per_country, width = 6, height = 4, dpi = 300)
