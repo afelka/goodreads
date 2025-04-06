@@ -6,3 +6,4 @@
 *.jpg
 !abc.jpg
 *.gif
+authors_old.csv
