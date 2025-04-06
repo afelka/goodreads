@@ -11,7 +11,7 @@ library(renv)
 
 ### Goodreads read shelf , change to yours if you want to try the code ###
 
-url <- "https://www.goodreads.com/review/list/43581926-erdem-emin-ak-ay?shelf=read"
+url <- "https://www.goodreads.com/review/list/102002329?ref=nav_mybooks"
 
 ### Setup Selenium with the newest chrome version ### 
 rD <- RSelenium::rsDriver(browser = "chrome",
