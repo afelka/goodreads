@@ -13,6 +13,7 @@ authors <- read.csv2("authors.csv")
 
 #combine goodreads_list and authors and add row_number
 goodreads_list <- goodreads_list %>% left_join(authors, by = "author_pages") %>%
+                                    arrange(desc(date_added)) %>% 
                                      mutate(row_number = n() - row_number() +1 ) %>%
                                      arrange(row_number)
 
@@ -66,8 +67,8 @@ for (i in 1:nrow(goodreads_list)) {
 
 #create data_frame with images in correct reading order
 image_data <- data.frame(
-  image_id = 1:101,
-  image_path = paste0("./book_", 1:101, ".png")
+  image_id = 1:114,
+  image_path = paste0("./book_", 1:114, ".png")
 )
 
 # read images in a list
