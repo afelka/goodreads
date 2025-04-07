@@ -4,6 +4,7 @@ library(ggplot2)
 library(maps)
 library(ggimage)
 library(magick)
+library(av)
 
 #read the csvs created scraping by Python 
 goodreads_list <- read.csv("goodreads_list.csv")
@@ -65,24 +66,11 @@ for (i in 1:nrow(goodreads_list)) {
   
 }
 
-#create data_frame with images in correct reading order
-image_data <- data.frame(
-  image_id = 1:114,
-  image_path = paste0("./book_", 1:114, ".png")
-)
+# using the animation method found here : https://stackoverflow.com/a/73376411/10710995
+filenames <- paste0("book_", 1:114, ".png")
 
-# read images in a list
-img_list <- lapply(image_data$image_path, image_read)
-
-## join the images together
-img_joined <- image_join(img_list)
-
-## animate at 1 frames per second
-img_animated <- image_animate(img_joined, fps = 1)
-
-# write the gif
-image_write(image = img_animated,
-            path = "aarhus_book_club.gif")
+av::av_encode_video(filenames, framerate = 0.75,
+                    output = "aarhus_bookclub.mp4")
 
 #map with number of books per country
 
