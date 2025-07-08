@@ -1,6 +1,6 @@
 # Goodreads Scraping & Creating Different Statistics and Plots
-This project uses [`goodreads_selenium_python`](https://github.com/ozbek/goodreads_selenium_python) to scrape data from Goodreads. All statistics and plots are generated using [`Goodreads.R`](Goodreads.R).  
-Example visualizations can be found below:
+This project utilizes [`goodreads_selenium_python.py`](https://github.com/afelka/goodreads/blob/main/goodreads_selenium_python.py) to scrape book data from Goodreads. The collected data is then analyzed and visualized using [`goodreads.R`](https://github.com/afelka/goodreads/blob/main/goodreads.R).  
+Below are some example visualizations generated from the data:
 
 **Books by Page Interval:**  
 <br>
