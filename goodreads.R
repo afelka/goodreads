@@ -185,11 +185,11 @@ ggplot(top_10, aes(book_number, author_name)) +
     axis.text.y = element_text(face="bold", size = 10)
   ) +
   geom_text(aes(x = no_of_books_per_author,label = no_of_books_per_author),
-            hjust = -1.8,
+            hjust = -1,
             colour = "black",
             size = 6)
 
-ggsave("top_10_author_books.png", width = 12, height = 6, dpi = 300)
+ggsave("top_10_author_books.png", width = 14, height = 6, dpi = 300)
          
 # Filter for the last 800 books as I have been registering them to Goodreads chronologically
 
