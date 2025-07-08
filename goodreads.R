@@ -9,168 +9,9 @@ library(DT)
 library(ggplot2)
 library(renv)
 
-### Goodreads read shelf , change to yours if you want to try the code ###
+# Selenium Scraping is moved to python : goodreads_selenium_python.py
 
-url <- "https://www.goodreads.com/review/list/102002329?ref=nav_mybooks"
-
-### Setup Selenium with the newest chrome version ### 
-rD <- RSelenium::rsDriver(browser = "chrome",
-                          chromever =
-                            system2(command = "wmic",
-                                    args = 'datafile where name="C:\\\\Program Files (x86)\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe" get Version /value',
-                                    stdout = TRUE,
-                                    stderr = TRUE) %>%
-                            stringr::str_extract(pattern = "(?<=Version=)\\d+\\.\\d+\\.\\d+\\.") %>%
-                            magrittr::extract(!is.na(.)) %>%
-                            stringr::str_replace_all(pattern = "\\.",
-                                                     replacement = "\\\\.") %>%
-                            paste0("^",  .) %>%
-                            stringr::str_subset(string =
-                                                  binman::list_versions(appname = "chromedriver") %>%
-                                                  dplyr::last()) %>%
-                            as.numeric_version() %>%
-                            max() %>%
-                            as.character())
-
-remDr <- rD$client
-
-## set page load time out ## 
-remDr$setTimeout(type="page load", milliseconds = 10000)
-
-### Connect to Goodreads using email and password , might ask for captcha ### 
-
-goodreads_sign_in <- "https://www.goodreads.com/user/sign_in"
-remDr$navigate(goodreads_sign_in)
-
-user_email <- remDr$findElement("css", "#user_email")
-user_password <- remDr$findElement("css", "#user_password")
-
-## pop up box to enter email & password
-user_email$sendKeysToElement(list(rstudioapi::askForPassword()))
-user_password$sendKeysToElement(list(rstudioapi::askForPassword()))
-
-sign_in_button <- remDr$findElement("css", ".gr-button--large") 
-sign_in_button$clickElement()
-
-
-## navigate to read shelf ## 
-remDr$navigate(url)
-
-### Find out the maximum page number ### 
-
-webElems0 <- remDr$findElements("xpath",'//div[@class="inter"]//a')
-
-no_of_pages <-  unlist(lapply(webElems0, function(x) {x$getElementAttribute("href")})) %>% 
-  str_extract("(?<=page\\=)\\s*\\-*[0-9.]+") %>%
-  as.numeric(.) %>%
-  max(.)
-
-
-## Create empty dataframe with needed columns
-goodreads_list <- data.frame(book_names = character(), 
-                             author_pages = character(),
-                             no_of_pages = character(),
-                             avg_rating = character(),
-                             my_rating = character(),
-                             date_added = character(),
-                             image_sources= character())
-                             
-
-## read the name of the book, page of the author, no_of_pages, avg_rating
-## date added , my_rating and cover image sources from each page
-
-for (i in 1:no_of_pages) {
-  
-### Create the new page dynamically ###   
-new_url <- url %>% str_replace("shelf=read", paste0("page=",i,"&shelf=read"))
-
-remDr$navigate(new_url)
-
-webElems1 <- remDr$findElements("xpath",'//td[@class="field title"]//a')
-
-book_names <- unlist(lapply(webElems1, function(x) {x$getElementAttribute("title")}))
-
-webElems2 <- remDr$findElements("xpath",'//td[@class="field author"]//a')
-
-author_pages <- unlist(lapply(webElems2, function(x) {x$getElementAttribute("href")}))
-
-webElems3 <- remDr$findElements("xpath",'//td[@class="field num_pages"]//div[@class="value"]')
-
-no_of_pages <- unlist(lapply(webElems3, function(x) {x$getElementText()})) %>% gsub( "[^[:digit:].]", "", .) %>%  as.numeric(.)
-
-webElems4 <- remDr$findElements("xpath",'//td[@class="field avg_rating"]//div[@class="value"]')
-
-avg_rating <- unlist(lapply(webElems4, function(x) {x$getElementText()})) %>% gsub( "[^[:digit:].]", "", .) %>%  as.numeric(.)
-
-webElems5 <- remDr$findElements("xpath",'//td[@class="field date_added"]//span')
-
-date_added <- unlist(lapply(webElems5, function(x) {x$getElementAttribute("title")})) %>% as.Date(., "%B %d, %Y")
-
-webElems6 <- remDr$findElements("xpath",'//td[@class="field rating"]//div[@class="stars"]')
-
-my_rating <- unlist(lapply(webElems6, function(x) {x$getElementAttribute("data-rating")}))
-
-webElems7 <- remDr$findElements("xpath",'//td[@class="field cover"]//img')
-
-image_sources <- unlist(lapply(webElems7, function(x) {x$getElementAttribute("src")}))
-
-temp_list <- data.frame(book_names = book_names, 
-                       author_pages = author_pages,
-                       no_of_pages = no_of_pages,
-                       avg_rating = avg_rating,
-                       my_rating = my_rating,
-                       date_added = date_added,
-                       image_sources= image_sources)
-
-goodreads_list <<- rbind(goodreads_list,temp_list)
-
-}
-
-## Download book covers (downloads covers to your computer, used later in plots)
-
-for (i in 1:nrow(goodreads_list)) {
-  
-  image_url <- goodreads_list[i,7]
-  
-  goodreads_list$image_name[i] <- paste0("cover_",i,".png")
-  
-  download.file(image_url, destfile = goodreads_list$image_name[i] ,mode = "wb")
-  
-}
-
-### Unique authors 
-authors <- goodreads_list %>% select(author_pages) %>% unique()
-authors$name <- ""
-
-## Get names for each author, might take long depending on how many unique authors one has ##
-
-for (i in 1:nrow(authors)) {
-  
-author_url <- authors[i,1]  
-
-remDr$navigate(author_url)
-
-Sys.sleep(3)
-
-webElem <- remDr$findElement("xpath",'//h1[@class="authorName"]//span[@itemprop="name"]') 
-
-authors$name[i] <- webElem$getElementText()[[1]]
-
-}
-
-### Close Selenium
-remDr$close()
-rD$server$stop()
- 
-## add author names to the goodreads_list 
-goodreads_list <- goodreads_list %>% left_join(authors, by = "author_pages")  
-
-## convert my_rating to numeric
-goodreads_list$my_rating <- as.numeric(goodreads_list$my_rating)
-
-# assign my_rating as rounded average of my_rating if it is 0
-goodreads_list$my_rating <- if_else(goodreads_list$my_rating == 0 ,
-                                    round(mean(goodreads_list$my_rating),0), goodreads_list$my_rating)
+goodreads_list <- read.csv("goodreads_list_erdem.csv")
 
 # create intervals for pages
 
@@ -250,8 +91,9 @@ datatable(two_star, options = list(pageLength = 20))
 
 # bar chart
 
-goodreads_list_rating_grouped <- goodreads_list %>% filter(!is.na(page_interval)) %>%
-  group_by(my_rating) %>% summarise(rating_count = n()) %>% ungroup()
+goodreads_list_grouped <- goodreads_list %>% filter(!is.na(page_interval)) %>%
+  group_by(page_interval) %>% summarise(no_of_books = n(), 
+                                        my_average = round(mean(my_rating),2))
 
 ## define coeff for aligning second axis to 1 to 5 scale 
 coeff <- round(max(goodreads_list_grouped$no_of_books) / 5,  -1)
@@ -295,11 +137,9 @@ goodreads_list_without_missing_page_info <-  goodreads_list %>%
   mutate(no_of_books = n(),
             my_average = round(mean(my_rating), 2))
 
-## create img_path to be used in geom_image
-goodreads_list_without_missing_page_info$img_path <- paste0("./",goodreads_list_without_missing_page_info$image_name)
 
 ggplot(goodreads_list_without_missing_page_info, aes(x = page_interval, 1)) + 
-  geom_image(aes(image=img_path), size=.05, position = "stack") +
+  geom_image(aes(image=image_name), size=.05, position = "stack") +
   geom_point(aes(x= page_interval , y = no_of_books), color = "white") +
   geom_text(aes(y = no_of_books,label = paste0(no_of_books, " (", my_average, ")")),
             vjust = -4,
@@ -330,12 +170,10 @@ top_10 <- goodreads_list %>% filter(!is.na(page_interval)) %>%
   ) %>% filter(rank <= 10) %>%  rename(author_name = name) %>% group_by(author_name) %>% 
       mutate(book_number = row_number()) 
 
-top_10$img_path <- paste0("./",top_10$image_name)
-
 top_10$author_name <- with(top_10, reorder(author_name, desc(rank)))
 
 ggplot(top_10, aes(book_number, author_name)) + 
-  geom_image(aes(image=img_path), size=.05, position = "identity") +
+  geom_image(aes(image=image_name), size=.05, position = "identity") +
   theme_classic()+
   labs(title = "Book covers of my top 10 most read authors") +
   theme(
