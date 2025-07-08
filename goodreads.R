@@ -246,3 +246,39 @@ ggplot(avg_per_50, aes(x = book_group, y = my_avg_rating)) +
   )
 
 ggsave("my_average_rating_per_50_books.png", width = 12, height = 6, dpi = 300)
+
+# Top 10 authors' book covers in the last 800 books
+
+top_10_last800 <- last_800_books %>%
+  filter(!is.na(page_interval)) %>%
+  left_join(
+    last_800_books %>%
+      group_by(name) %>%
+      summarise(no_of_books_per_author = n()) %>%
+      arrange(desc(no_of_books_per_author)) %>%
+      mutate(rank = row_number()),
+    by = "name"
+  ) %>%
+  filter(rank <= 10) %>%
+  rename(author_name = name) %>%
+  group_by(author_name) %>%
+  mutate(book_number = row_number())
+
+top_10_last800$author_name <- with(top_10_last800, reorder(author_name, desc(rank)))
+
+ggplot(top_10_last800, aes(book_number, author_name)) +
+  geom_image(aes(image = image_name), size = .05, position = "identity") +
+  theme_classic() +
+  labs(title = "Book covers of my top 10 most read authors (Last 800 Books)") +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.x = element_blank(),
+    axis.text.y = element_text(face = "bold", size = 10)
+  ) +
+  geom_text(aes(x = no_of_books_per_author, label = no_of_books_per_author),
+            hjust = -1,
+            colour = "black",
+            size = 6)
+
+ggsave("top_10_author_books_last800.png", width = 14, height = 6, dpi = 300)

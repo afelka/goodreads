@@ -12,3 +12,6 @@ Example visualizations can be found below:
 
 **Top 10 Read Authors:**  
 ![Top 10 Read Authors](images/top_10_author_books.png)
+
+**Top 10 Read Authors Last 800 Books:**  
+![Top 10 Read Authors](images/top_10_author_books_last800.png)
