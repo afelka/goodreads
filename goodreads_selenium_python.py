@@ -144,3 +144,17 @@ for idx, row in authors.iterrows():
 
 # Close Selenium
 driver.quit()
+
+# Add author names to the goodreads_list by merging on 'author_pages'
+goodreads_list = goodreads_list.merge(authors, on="author_pages", how="left")
+
+# Convert my_rating to numeric
+goodreads_list['my_rating'] = pd.to_numeric(goodreads_list['my_rating'], errors='coerce')
+
+# Assign my_rating as rounded average if it is 0
+mean_rating = round(goodreads_list['my_rating'].mean(), 0)
+goodreads_list['my_rating'] = goodreads_list['my_rating'].apply(
+    lambda x: mean_rating if x == 0 or pd.isna(x) else x
+)
+
+goodreads_list.to_csv("goodreads_list_erdem.csv", index=False)
