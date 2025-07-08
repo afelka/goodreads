@@ -7,7 +7,7 @@ library(purrr)
 library(lubridate)
 library(DT)
 library(ggplot2)
-library(renv)
+library(ggrepel)
 
 # Selenium Scraping is moved to python : goodreads_selenium_python.py
 
@@ -194,11 +194,11 @@ last_800_books <- goodreads_list %>%
   mutate(date_added = mdy(date_added)) %>%
   arrange(desc(date_added)) %>% head(800)
 
-# Split into groups of 100 books (chronologically)
+# Split into groups of 50 books (chronologically)
 last_800_books <- last_800_books %>% arrange(date_added) %>% 
-  mutate(book_group = (row_number() - 1) %/% 100 + 1)
+  mutate(book_group = (row_number() - 1) %/% 50 + 1)
 
-avg_per_100 <- last_800_books %>%
+avg_per_50 <- last_800_books %>%
   group_by(book_group) %>%
   summarise(
     start_date = min(date_added, na.rm = TRUE),
@@ -207,16 +207,33 @@ avg_per_100 <- last_800_books %>%
     n_books = n()
   )
 
-# Plot my average rating over 100 books
-ggplot(avg_per_100, aes(x = book_group, y = my_avg_rating)) +
+# Plot my average rating over 50 books using geom_text_repel
+
+ggplot(avg_per_50, aes(x = book_group, y = my_avg_rating)) +
   geom_line(color = "#143c8a", linewidth = 1.2) +
   geom_point(size = 3, color = "orange") +
-  geom_text(aes(label = my_avg_rating), vjust = 2, hjust = 1,  size = 4) +
-  scale_x_continuous(breaks = avg_per_100$book_group,
-                      labels = paste0("Group ", avg_per_100$book_group, "\n(", avg_per_100$start_date, " - ", avg_per_100$end_date, ")")) +
+  geom_text_repel(
+    aes(label = my_avg_rating),
+    size = 4,
+    max.overlaps = Inf,
+    nudge_y = 0.05,
+    nudge_x = ifelse(avg_per_50$book_group == 10, 0.2, 0), # nudge group 10 to the right
+    direction = "y",
+    segment.size = 0.2,
+    box.padding = 0.3,
+    min.segment.length = 0
+  ) +
+  scale_x_continuous(
+    breaks = avg_per_50$book_group,
+    labels = paste0(
+      "Group ", avg_per_50$book_group, "\n(",
+      format(avg_per_50$start_date, "%Y-%m"), " - ",
+      format(avg_per_50$end_date, "%Y-%m"), ")"
+    )
+  ) +
   labs(
-    title = "My Average Rating per 100 Books (Last 800 Books)",
-    x = "Book Groups (Chronological, 100 books each)",
+    title = "My Average Rating per 50 Books (Last 800 Books)",
+    x = "Book Groups (Chronological, 50 books each)",
     y = "My Average Rating"
   ) +
   theme_classic() +
