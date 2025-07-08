@@ -187,19 +187,18 @@ ggplot(top_10, aes(book_number, author_name)) +
             colour = "black",
             size = 6)
          
-# Filter for the last 10 years and calculate my average rating per 100 books
+# Filter for the last 800 books as I have been registering them to Goodreads chronologically
 
-last_10_years <- goodreads_list %>%
+last_800_books <- goodreads_list %>%
   filter(!is.na(date_added)) %>%
   mutate(date_added = mdy(date_added)) %>%
-  filter(date_added >= (today() - years(10))) %>%
-  arrange(date_added)
+  arrange(desc(date_added)) %>% head(800)
 
 # Split into groups of 100 books (chronologically)
-last_10_years <- last_10_years %>%
+last_800_books <- last_800_books %>% arrange(date_added) %>% 
   mutate(book_group = (row_number() - 1) %/% 100 + 1)
 
-avg_per_100 <- last_10_years %>%
+avg_per_100 <- last_800_books %>%
   group_by(book_group) %>%
   summarise(
     start_date = min(date_added, na.rm = TRUE),
@@ -208,15 +207,15 @@ avg_per_100 <- last_10_years %>%
     n_books = n()
   )
 
-# Plot my average rating over 100 books in last 10 years
+# Plot my average rating over 100 books
 ggplot(avg_per_100, aes(x = book_group, y = my_avg_rating)) +
   geom_line(color = "#143c8a", linewidth = 1.2) +
   geom_point(size = 3, color = "orange") +
-  geom_text(aes(label = my_avg_rating), vjust = -2.5, size = 4) +
+  geom_text(aes(label = my_avg_rating), vjust = 2, hjust = 1,  size = 4) +
   scale_x_continuous(breaks = avg_per_100$book_group,
                       labels = paste0("Group ", avg_per_100$book_group, "\n(", avg_per_100$start_date, " - ", avg_per_100$end_date, ")")) +
   labs(
-    title = "My Average Rating per 100 Books (Last 8 Years)",
+    title = "My Average Rating per 100 Books (Last 800 Books)",
     x = "Book Groups (Chronological, 100 books each)",
     y = "My Average Rating"
   ) +
