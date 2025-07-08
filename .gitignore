@@ -9,3 +9,4 @@
 authors_old.csv
 *.Rproj
 *.mp4
+!images/
