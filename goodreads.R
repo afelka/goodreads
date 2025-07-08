@@ -159,6 +159,8 @@ ggplot(goodreads_list_without_missing_page_info, aes(x = page_interval, 1)) +
     axis.text.x = element_text(angle = 45, vjust = 0.5)
   ) 
 
+ggsave("books_by_page_interval.png", width = 12, height = 6, dpi = 300)
+
 ## top 10 authors' book covers
 
 top_10 <- goodreads_list %>% filter(!is.na(page_interval)) %>%
@@ -186,6 +188,8 @@ ggplot(top_10, aes(book_number, author_name)) +
             hjust = -1.8,
             colour = "black",
             size = 6)
+
+ggsave("top_10_author_books.png", width = 12, height = 6, dpi = 300)
          
 # Filter for the last 800 books as I have been registering them to Goodreads chronologically
 
@@ -240,3 +244,5 @@ ggplot(avg_per_50, aes(x = book_group, y = my_avg_rating)) +
   theme(
     axis.text.x = element_text(angle = 30, hjust = 1, size = 9)
   )
+
+ggsave("my_average_rating_per_50_books.png", width = 12, height = 6, dpi = 300)
