@@ -8,6 +8,8 @@ library(lubridate)
 library(DT)
 library(ggplot2)
 library(ggrepel)
+library(forcats)
+library(ggtext)
 
 # Selenium Scraping is moved to python : goodreads_selenium_python.py
 
@@ -282,3 +284,86 @@ ggplot(top_10_last800, aes(book_number, author_name)) +
             size = 6)
 
 ggsave("top_10_author_books_last800.png", width = 14, height = 6, dpi = 300)
+
+
+goodreads_list <- goodreads_list %>%
+  filter(!is.na(date_added)) %>%
+  mutate(date_added = mdy(date_added)) %>%
+  arrange(desc(date_added)) %>%
+  mutate(
+    period = ifelse(row_number() <= n() / 2, "After Oct 2016", "Until Oct 2016")
+  )
+
+number_of_books_by_period <- goodreads_list %>% 
+  filter(name != 'Agatha Christie') %>%
+  group_by(name, period) %>% summarise(no_of_books = n()) %>% ungroup()
+
+top_10_by_period <- number_of_books_by_period %>%
+  group_by(period) %>%
+  slice_max(order_by = no_of_books, n = 10) %>%
+  ungroup()
+
+top_authors_by_period <- top_10_by_period %>%
+  pull(name) %>%
+  unique()
+
+top_books_by_period <- goodreads_list %>%
+  filter(name %in% top_authors_by_period, !is.na(image_name)) %>%
+  mutate(author_name = name) %>%
+  group_by(author_name, period) %>%
+  arrange(date_added) %>%
+  mutate(book_number = row_number()) %>%
+  ungroup()
+
+
+top_books_by_period <- top_books_by_period %>%
+  mutate(book_number_mirrored = ifelse(period == "Until Oct 2016", -book_number, book_number),
+         period = factor(period, levels = c("Until Oct 2016", "After Oct 2016")))
+
+author_totals <- top_books_by_period %>%
+  count(author_name, name = "total_books")
+
+top_books_by_period <- top_books_by_period %>%
+  left_join(author_totals, by = "author_name") %>%
+  mutate(author_name = fct_reorder(author_name, total_books))
+
+author_period_status <- top_books_by_period %>%
+  distinct(author_name, period) %>%
+  group_by(author_name) %>%
+  summarise(periods = paste(sort(unique(period)), collapse = ",")) %>%
+  mutate(
+    color = case_when(
+      periods == "Until Oct 2016,After Oct 2016" ~ "blue",
+      periods == "Until Oct 2016" ~ "red",
+      periods == "After Oct 2016" ~ "orange",
+      TRUE ~ "black"
+    )
+  )
+
+author_colors <- setNames(author_period_status$color, author_period_status$author_name)
+
+colored_labels <- paste0(
+  "<span style='color:", author_colors[levels(factor(top_books_by_period$author_name))], "'>",
+  levels(factor(top_books_by_period$author_name)),
+  "</span>"
+)
+
+ggplot(top_books_by_period, aes(book_number_mirrored, factor(author_name, levels = levels(factor(author_name))))) +
+  geom_image(aes(image = image_name), size = .02) +
+  facet_wrap(~period, scales = "free_x") +
+  theme_classic() +
+  labs(
+    title = "Book covers of top authors split by time period",
+    subtitle = "Author names colored by period presence: Blue = both periods, Red = Until Oct 2016 only, Orange = After Oct 2016 only",
+    x = NULL, y = NULL
+  ) +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.y = element_markdown(face = "bold", size = 10),
+    strip.text = element_text(face = "bold", size = 12),
+    plot.subtitle = element_text(size = 10, face = "italic", color = "gray30")
+  ) +
+  scale_y_discrete(labels = colored_labels)
+
+ggsave("top_10_author_books_split_by_period.png", width = 14, height = 6, dpi = 300)
