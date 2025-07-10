@@ -16,4 +16,8 @@ Below are some example visualizations generated from the data:
 
 **Top 10 Read Authors Last 800 Books:**  
 <br>
-![Top 10 Read Authors](images/top_10_author_books_last800.png)
+![Top 10 Read Authors Last](images/top_10_author_books_last800.png)
+
+**Top 10 Read Authors in Split Periods:**  
+<br>
+![Top 10 Read Authors Split](images/top_10_author_books_split_by_period.png)
