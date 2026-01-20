@@ -36,9 +36,11 @@ goodreads_list = pd.DataFrame(columns=[
     'book_names',
     'author_pages',
     'no_of_pages',
+    'no_of_ratings',
     'avg_rating',
     'my_rating',
     'date_added',
+    'date_read',
     'image_sources'
 ])
 
@@ -93,13 +95,30 @@ for i in range(1, no_of_pages + 1):
     webElems7 = driver.find_elements(By.XPATH, '//td[@class="field cover"]//img')
     image_sources = [elem.get_attribute("src") for elem in webElems7]
 
+    webElems8 = driver.find_elements(By.XPATH, '//tr[contains(@id, "review_")]')
+    date_read = []
+    for row in webElems8:
+        try:
+            span = row.find_element(By.XPATH, './/td[@class="field date_read"]//span')
+            date_read.append(span.text)
+        except:
+            date_read.append("")
+
+    webElems9 = driver.find_elements(By.XPATH, '//td[@class="field num_ratings"]//div[@class="value"]')
+    no_of_ratings_list = [
+        int(re.sub(r"[^\d.]", "", elem.text)) if re.sub(r"[^\d.]", "", elem.text) else None
+        for elem in webElems9
+    ]
+
     temp_list = pd.DataFrame({
         'book_names': book_names,
         'author_pages': author_pages,
         'no_of_pages': no_of_pages_list,
+        'no_of_ratings': no_of_ratings_list,
         'avg_rating': avg_rating,
         'my_rating': my_rating,
         'date_added': date_added,
+        'date_read': date_read,
         'image_sources': image_sources
     })
 
@@ -107,7 +126,7 @@ for i in range(1, no_of_pages + 1):
 
 # Download book www (downloads www to your computer, used later in plots)
 
-if not os.path.exists("wwww"):
+if not os.path.exists("www"):
     os.makedirs("www")
 
 goodreads_list['image_name'] = ""
@@ -125,6 +144,7 @@ for idx, row in goodreads_list.iterrows():
                         f.write(chunk)
         except Exception as e:
             print(f"Failed to download {image_url}: {e}")
+    time.sleep(1)
 
 # Unique authors
 authors = goodreads_list[['author_pages']].drop_duplicates().reset_index(drop=True)
@@ -141,6 +161,7 @@ for idx, row in authors.iterrows():
             authors.at[idx, 'name'] = webElem.text
         except Exception as e:
             print(f"Failed to get author name from {author_url}: {e}")
+    time.sleep(1)
 
 # Close Selenium
 driver.quit()
