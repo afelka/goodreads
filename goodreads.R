@@ -10,6 +10,7 @@ library(ggplot2)
 library(ggrepel)
 library(forcats)
 library(ggtext)
+library(scales)
 
 # Selenium Scraping is moved to python : goodreads_selenium_python.py
 
@@ -367,3 +368,48 @@ ggplot(top_books_by_period, aes(book_number_mirrored, factor(author_name, levels
   scale_y_discrete(labels = colored_labels)
 
 ggsave("top_10_author_books_split_by_period.png", width = 14, height = 6, dpi = 300)
+
+
+year_read <- goodreads_list %>% filter(date_read != 'not set') %>%
+             mutate(date_read_cleaned =  mdy(date_read, truncated = 1),
+                                       year_read = year(date_read_cleaned)) %>%
+             group_by(year_read) %>% summarise(total_ratings = sum(no_of_ratings),
+                                               number_of_books = n()) %>%
+             filter(year_read >= 2015 & year_read <= 2025) %>%
+             mutate(avg_rating = total_ratings / number_of_books)
+
+ggplot(year_read, aes(x = factor(year_read), y = total_ratings)) +
+  geom_col(fill = "#69b3a2", width = 0.7) + 
+  
+  # 1. Format labels to show Millions (M) with a dot separator
+  # scale = 1e-6 divides the number by 1,000,000
+  geom_text(aes(label = label_number(suffix = "M", scale = 1e-6, 
+                                     big.mark = ".", decimal.mark = ",", 
+                                     accuracy = 0.1)(total_ratings)), 
+            vjust = -0.5, 
+            size = 4.5, 
+            fontface = "bold") +
+  
+  # 2. Format Y-axis to match
+  scale_y_continuous(
+    labels = label_number(suffix = " M", scale = 1e-6, big.mark = ".", decimal.mark = ","),
+    expand = expansion(mult = c(0, 0.15)) # Extra space at top for labels
+  ) +
+  
+  theme_classic() +
+  labs(
+    title = "The Popularity Peak: Total Global Ratings of Books Read",
+    subtitle = "Aggregated Goodreads ratings (In 2025 I read more popular titles)",
+    x = "Year Finished",
+    y = "Total Global Ratings"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 11, hjust = 0.5, color = "gray30"),
+    axis.text.x = element_text(face = "bold", size = 12),
+    axis.text.y = element_text(face = "bold", size = 10)
+  )
+
+# Save the plot
+ggsave("total_ratings_formatted.png", width = 12, height = 6, dpi = 300)
+
